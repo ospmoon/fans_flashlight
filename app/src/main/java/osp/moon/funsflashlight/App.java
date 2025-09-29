@@ -4,6 +4,11 @@ import android.app.Application;
 import android.os.Build;
 import android.util.Log;
 
+import java.util.List;
+
+import osp.moon.funsflashlight.customobjects.FanCollection;
+import osp.moon.funsflashlight.helpers.AppHelper;
+
 public class App extends Application {
 
     private final String TAG = App.class.getName();
@@ -14,6 +19,13 @@ public class App extends Application {
 
         Log.i(TAG, "APPLICATION CREATED");
         Log.i(TAG, getDeviceInfo());
+
+        try {
+            List<FanCollection> collectionList = AppHelper.getAssetsColors(this);
+            Log.i(TAG, "Assets colors: " + collectionList.toString());
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting assets colors", e);
+        }
 
         setUncaughtExceptionHandler();
     }

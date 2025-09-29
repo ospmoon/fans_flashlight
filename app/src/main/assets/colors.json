@@ -1,0 +1,37 @@
+[
+    {"id":1, "title":"Solid colors", 
+      "colors":[
+        {"id":1, "title": "White", "value":"#ffffff"},
+        {"id":2, "title": "Red", "value":"#ff0000"},
+        {"id":3, "title": "Yellow", "value":"#ffff00"},
+        {"id":4, "title": "Blue", "value":"#0000ff"},
+        {"id":5, "title": "Green", "value":"#00ff00"},
+        {"id":6, "title": "Pink", "value":"#ff00ff"},
+        {"id":7, "title": "Cyan", "value":"#00ffff"},
+        {"id":8, "title": "Grey", "value":"#7f7f7f"},
+        {"id":9, "title": "Orange", "value":"#ff7f00"},
+        {"id":10, "title": "Purple", "value":"#7f00ff"},
+        {"id":11, "title": "Black", "value":"#000000"}
+      ]
+    },
+    {"id":2, "title":"Animated colors", 
+      "colors":[
+        {"id":1, "title": "Flash", "ids":[1,11], "delay":500},
+        {"id":2, "title": "Ukraine", "ids":[3,7], "delay":1000},
+        {"id":3, "title": "Rainbow", "ids":[2,3,4,5,6,7,9,10], "delay":500},
+        {"id":4, "title": "Disco", "ids":[], "delay":300}
+      ]
+    },
+    {"id":3, "title":"Flags", 
+      "colors":[
+        {"id":1, "title": "Ukraine", "path":"assets", "filename":"ua.png"},
+        {"id":2, "title": "Poland", "path":"assets", "filename":"pl.png"},
+        {"id":3, "title": "USA", "path":"assets", "filename":"us.png"},
+        {"id":4, "title": "Europe", "path":"assets", "filename":"eu.png"},
+        {"id":5, "title": "Romania", "path":"assets", "filename":"ro.png"},
+        {"id":6, "title": "Italy", "path":"assets", "filename":"it.png"},
+        {"id":7, "title": "France", "path":"assets", "filename":"fr.png"},
+        {"id":8, "title": "Germany", "path":"assets", "filename":"de.png"}
+      ]
+    }
+]

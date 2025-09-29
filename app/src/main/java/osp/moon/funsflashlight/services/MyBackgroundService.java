@@ -14,9 +14,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import osp.moon.funsflashlight.R;
 import osp.moon.funsflashlight.helpers.AppHelper;
 
-public class MyCaptureService extends Service {
+public class MyBackgroundService extends Service {
 
-    private final String TAG = MyCaptureService.class.getName();
+    private final String TAG = MyBackgroundService.class.getName();
     public static final String ACTION_START = "osp.moon.clonescreen.ACTION_START";
     public static final String ACTION_STOP = "osp.moon.clonescreen.ACTION_STOP";
     private static final int SERVICE_ID = 1;
