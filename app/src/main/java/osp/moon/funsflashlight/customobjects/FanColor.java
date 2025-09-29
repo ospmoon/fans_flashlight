@@ -1,9 +1,9 @@
 package osp.moon.funsflashlight.customobjects;
 
 public abstract class FanColor {
-    private int collectionId;
-    private int id;
-    private String title;
+    private final int id;
+    private final int collectionId;
+    private final String title;
     public FanColor(int collectionId, int id, String title) {
         this.collectionId = collectionId;
         this.id = id;

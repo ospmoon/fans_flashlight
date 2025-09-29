@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "osp.moon.funsflashlight"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -37,4 +37,13 @@ dependencies {
 
     //navigation for android:name="androidx.navigation.fragment.NavHostFragment"
     implementation(libs.navigation.fragment.ktx)
+
+    //Dagger
+    //implementation (libs.dagger)
+    //annotationProcessor (libs.dagger.compiler)
+
+    //Room database
+    //implementation (libs.room.runtime)
+    //annotationProcessor (libs.room.compiler)
+    //implementation(libs.room.rxjava2)
 }

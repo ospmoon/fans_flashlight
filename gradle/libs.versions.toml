@@ -1,15 +1,22 @@
 [versions]
-agp = "8.4.0"
+agp = "8.13.0"
 appcompat = "1.7.1"
+dagger = "2.57.2"
 material = "1.13.0"
-activity = "1.8.0"
-navigationFragmentKtx = "2.9.4"
+activity = "1.11.0"
+navigationFragmentKtx = "2.9.5"
+roomRxjava2 = "2.8.1"
 
 [libraries]
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
+dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRxjava2" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRxjava2" }
+room-rxjava2 = { module = "androidx.room:room-rxjava2", version.ref = "roomRxjava2" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

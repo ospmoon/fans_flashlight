@@ -8,16 +8,22 @@ import org.json.JSONObject;
 
 public class SolidColor extends FanColor {
     private final String value;
+
+    public SolidColor(int collectionId, int id, String title, String value) {
+        super(collectionId, id, title);
+        this.value = value;
+    }
+
     public int getColor() {
         try {
-            return Color.parseColor(value);
+            return Color.parseColor(this.value);
         } catch (Exception e) {
             return Color.WHITE;
         }
     }
-    public SolidColor(int collectionId, int id, String title, String value) {
-        super(collectionId, id, title);
-        this.value = value;
+
+    public String getValue() {
+        return this.value;
     }
 
     @NonNull
@@ -27,7 +33,7 @@ public class SolidColor extends FanColor {
         try {
             jsonObject.put("id", getId());
             jsonObject.put("title", getTitle());
-            jsonObject.put("value", value);
+            jsonObject.put("value", getValue());
         } catch (Exception e) {
             e.printStackTrace();
         }

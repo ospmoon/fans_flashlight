@@ -7,6 +7,7 @@ import android.util.Log;
 import java.util.List;
 
 import osp.moon.funsflashlight.customobjects.FanCollection;
+import osp.moon.funsflashlight.database.AppDatabase;
 import osp.moon.funsflashlight.helpers.AppHelper;
 
 public class App extends Application {
@@ -18,16 +19,22 @@ public class App extends Application {
         super.onCreate();
 
         Log.i(TAG, "APPLICATION CREATED");
+        setUncaughtExceptionHandler();
         Log.i(TAG, getDeviceInfo());
 
-        try {
-            List<FanCollection> collectionList = AppHelper.getAssetsColors(this);
-            Log.i(TAG, "Assets colors: " + collectionList.toString());
-        } catch (Exception e) {
-            Log.e(TAG, "Error getting assets colors", e);
+        AppDatabase.clearAllTables(getApplicationContext());
+
+
+        List<FanCollection> collectionList = AppHelper.getAssetsColors(this);
+        Log.i(TAG, "Assets colors: " + collectionList);
+
+
+        for (FanCollection collection : collectionList) {
+            AppDatabase.insertCollection(getApplicationContext(), collection);
         }
 
-        setUncaughtExceptionHandler();
+        List<FanCollection> databaseList = AppDatabase.getCollectionList(getApplicationContext());
+        Log.i(TAG, "databaseList: " + databaseList);
     }
 
     private void setUncaughtExceptionHandler() {

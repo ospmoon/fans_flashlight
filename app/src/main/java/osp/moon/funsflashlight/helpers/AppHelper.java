@@ -31,49 +31,53 @@ public class AppHelper {
 
     private static final String TAG = AppHelper.class.getName();
 
-    public static List<FanCollection> getAssetsColors(final Context context) throws Exception {
+    public static List<FanCollection> getAssetsColors(final Context context) {
         List<FanCollection> result = new ArrayList<>();
 
         String jsonString = readAsset(context, "colors.json");
 
-        JSONArray jsonArray = new JSONArray(jsonString);
+        try {
+            JSONArray jsonArray = new JSONArray(jsonString);
 
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject collectionItem = jsonArray.getJSONObject(i);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject collectionItem = jsonArray.getJSONObject(i);
 
-            int collectionId = collectionItem.getInt("id");
-            String collectionTitle = collectionItem.getString("title");
-            JSONArray colors = collectionItem.getJSONArray("colors");
-            List<FanColor> colorsList = new ArrayList<>();
-            for (int j = 0; j < colors.length(); j++) {
-                JSONObject colorItem = colors.getJSONObject(j);
-                int id = colorItem.getInt("id");
-                String title = colorItem.getString("title");
-                FanColor fanColor = null;
-                if (colorItem.has("value")) {
-                    String value = colorItem.getString("value");
-                    fanColor = new SolidColor(collectionId, id, title, value);
-                } else if (colorItem.has("ids")) {
-                    JSONArray ids = colorItem.getJSONArray("ids");
-                    List<Integer> idsList = new ArrayList<>();
-                    for (int k = 0; k < ids.length(); k++) {
-                        idsList.add(ids.getInt(k));
+                int collectionId = collectionItem.getInt("id");
+                String collectionTitle = collectionItem.getString("title");
+                JSONArray colors = collectionItem.getJSONArray("colors");
+                List<FanColor> colorsList = new ArrayList<>();
+                for (int j = 0; j < colors.length(); j++) {
+                    JSONObject colorItem = colors.getJSONObject(j);
+                    int id = colorItem.getInt("id");
+                    String title = colorItem.getString("title");
+                    FanColor fanColor = null;
+                    if (colorItem.has("value")) {
+                        String value = colorItem.getString("value");
+                        fanColor = new SolidColor(collectionId, id, title, value);
+                    } else if (colorItem.has("ids")) {
+                        JSONArray ids = colorItem.getJSONArray("ids");
+                        List<Integer> idsList = new ArrayList<>();
+                        for (int k = 0; k < ids.length(); k++) {
+                            idsList.add(ids.getInt(k));
+                        }
+                        int delay = 1000;
+                        if (colorItem.has("delay")) {
+                            delay = colorItem.getInt("delay");
+                        }
+                        fanColor = new AnimatedColor(collectionId, id, title, idsList, delay);
+                    } else if (colorItem.has("path")) {
+                        String path = colorItem.getString("path");
+                        String fileName = colorItem.getString("filename");
+                        fanColor = new FanImage(collectionId, id, title, path, fileName);
                     }
-                    int delay = 1000;
-                    if (colorItem.has("delay")) {
-                        delay = colorItem.getInt("delay");
-                    }
-                    fanColor = new AnimatedColor(collectionId, id, title, idsList, delay);
-                } else if (colorItem.has("path")) {
-                    String path = colorItem.getString("path");
-                    String fileName = colorItem.getString("filename");
-                    fanColor = new FanImage(collectionId, id, title, path, fileName);
+                    if (fanColor == null) continue;
+                    colorsList.add(fanColor);
                 }
-                if (fanColor == null) continue;
-                colorsList.add(fanColor);
+                FanCollection fanCollection = new FanCollection(collectionId, collectionTitle, colorsList);
+                result.add(fanCollection);
             }
-            FanCollection fanCollection = new FanCollection(collectionId, collectionTitle, colorsList);
-            result.add(fanCollection);
+        } catch (Exception e) {
+            Log.e(TAG, "getAssetsColors: ", e);
         }
         return result;
     }
