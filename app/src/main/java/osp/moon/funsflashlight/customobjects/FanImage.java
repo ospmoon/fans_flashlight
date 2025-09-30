@@ -4,7 +4,9 @@ import androidx.annotation.NonNull;
 
 import org.json.JSONObject;
 
-public class FanImage extends FanColor {
+import java.io.Serializable;
+
+public class FanImage extends FanColor implements Serializable {
     public static final String ASSETS = "assets";
     private final String path;
     private final String fileName;

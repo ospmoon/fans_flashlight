@@ -6,7 +6,9 @@ import androidx.annotation.NonNull;
 
 import org.json.JSONObject;
 
-public class SolidColor extends FanColor {
+import java.io.Serializable;
+
+public class SolidColor extends FanColor implements Serializable {
     private final String value;
 
     public SolidColor(int collectionId, int id, String title, String value) {

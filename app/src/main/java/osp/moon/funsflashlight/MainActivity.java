@@ -10,6 +10,7 @@ import android.widget.RelativeLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentContainerView;
+import androidx.navigation.Navigation;
 
 import java.util.List;
 
@@ -108,9 +109,17 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
         }
     }
 
+    private void sendColorToFragment(FanColor fanColor) {
+        Log.w(TAG, "sendColorToFragment()");
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("fanColor", fanColor);
+        Navigation.findNavController(this, R.id.nav_host_fragment).navigate(R.id.welcomeFragment, bundle);
+    }
+
     @Override
     public void onFanColorClicked(FanColor fanColor) {
         Log.d(TAG, "onFanColorClicked called with: " + (fanColor != null ? fanColor.getClass().getSimpleName() : "null"));
         Log.d(TAG, "FanColor: " + (fanColor != null ? fanColor.toString() : "null"));
+        sendColorToFragment(fanColor);
     }
 }

@@ -4,10 +4,11 @@ import androidx.annotation.NonNull;
 
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnimatedColor extends FanColor {
+public class AnimatedColor extends FanColor implements Serializable {
     private final List<Integer> ids;
     private final int delay;
 

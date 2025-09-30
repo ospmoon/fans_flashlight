@@ -1,6 +1,8 @@
 package osp.moon.funsflashlight.customobjects;
 
-public abstract class FanColor {
+import java.io.Serializable;
+
+public abstract class FanColor implements Serializable {
     private final int id;
     private final int collectionId;
     private final String title;

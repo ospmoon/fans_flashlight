@@ -37,7 +37,7 @@ public class AppDatabase extends SQLiteOpenHelper {
 
     private final String CREATE_TABLE_COLOR = "CREATE TABLE IF NOT EXISTS " + TypeTable.COLOR_TABLE + " (" +
             " id integer," +
-            " collection_id text," +
+            " collection_id integer," +
             " title text," +
             " value text," +
             " delay integer," +
@@ -157,7 +157,7 @@ public class AppDatabase extends SQLiteOpenHelper {
             if (index >= 0) {
                 int id = cursor.getInt(index);
                 index = cursor.getColumnIndex("title");
-                if (index >= 0) {
+                if (!cursor.isNull(index)) {
                     String title = cursor.getString(index);
                     result.add(new FanCollection(id, title, getColorList(context, id)));
                 }
@@ -179,7 +179,7 @@ public class AppDatabase extends SQLiteOpenHelper {
             if (index >= 0) {
                 int id = cursor.getInt(index);
                 index = cursor.getColumnIndex("title");
-                if (index >= 0) {
+                if (!cursor.isNull(index)) {
                     String title = cursor.getString(index);
                     index = cursor.getColumnIndex("value");
                     if (!cursor.isNull(index)) {
@@ -192,7 +192,7 @@ public class AppDatabase extends SQLiteOpenHelper {
                     if (!cursor.isNull(index)) {
                         String path = cursor.getString(index);
                         index = cursor.getColumnIndex("file_name");
-                        if (index >= 0) {
+                        if (!cursor.isNull(index)) {
                             String fileName = cursor.getString(index);
                             result.add(new FanImage(collectionId, id, title, path, fileName));
                             continue;
@@ -234,19 +234,49 @@ public class AppDatabase extends SQLiteOpenHelper {
         return result;
     }
 
-    public static synchronized String getColorHex(final Context context, int id) {
-        Log.i(TAG, "getColorHex(), id: " + id);
-        String result = null;
+    public static synchronized FanColor getSolidColor(final Context context, int id) {
+        Log.i(TAG, "getSolidColor(), id: " + id);
+        FanColor result = null;
         String query = "SELECT  * FROM " + TypeTable.COLOR_TABLE.getStringValue() + " WHERE collection_id=1 AND id=" + id;
         SQLiteDatabase db = getInstance(context).getWritableDatabase();
         Cursor cursor = db.rawQuery(query, null);
-       cursor.moveToFirst();
-        int index = cursor.getColumnIndex("value");
+        cursor.moveToFirst();
+        int index = cursor.getColumnIndex("title");
         if (!cursor.isNull(index)) {
-            result = cursor.getString(index);
+            String title = cursor.getString(index);
+            index = cursor.getColumnIndex("value");
+            if (!cursor.isNull(index)) {
+                String value = cursor.getString(index);
+                result = new SolidColor(1, id, title, value);
+            }
         }
         cursor.close();
-        Log.i(TAG, "getColorHex(), result: " + result);
+        Log.i(TAG, "getSolidColor(), result: " + result);
+        return result;
+    }
+
+    public static synchronized FanColor getAnimatedColor(final Context context, int animatedColorId) {
+        Log.i(TAG, "getAnimatedColor(), id: " + animatedColorId);
+        FanColor result = null;
+        String query = "SELECT  * FROM " + TypeTable.COLOR_TABLE.getStringValue() + " WHERE collection_id=2 AND id=" + animatedColorId;
+        SQLiteDatabase db = getInstance(context).getWritableDatabase();
+        Cursor cursor = db.rawQuery(query, null);
+        cursor.moveToFirst();
+        int index = cursor.getColumnIndex("title");
+        if (!cursor.isNull(index)) {
+            String title = cursor.getString(index);
+            index = cursor.getColumnIndex("delay");
+            if (index >= 0) {
+                int delay = cursor.getInt(index);
+                if (delay > 0) {
+                    List<Integer> ids = getIds(context, animatedColorId);
+                    result = new AnimatedColor(2, animatedColorId, title, ids, delay);
+
+                }
+            }
+        }
+        cursor.close();
+        Log.i(TAG, "getAnimatedColor(), result: " + result);
         return result;
     }
 

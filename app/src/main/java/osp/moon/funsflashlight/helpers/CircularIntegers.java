@@ -1,17 +1,17 @@
 package osp.moon.funsflashlight.helpers;
 
 import android.content.Context;
-import android.graphics.Color;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import osp.moon.funsflashlight.customobjects.SolidColor;
 import osp.moon.funsflashlight.database.AppDatabase;
 
 public class CircularIntegers {
     private List<Integer> mIds;
-    private int currentIndex = -1; // Начнем с -1, чтобы первый вызов getNext() вернул первый элемент
+    private int currentIndex = -1;
 
     public CircularIntegers(final Context context, List<Integer> ids) {
         if (ids == null || ids.isEmpty()) {
@@ -19,8 +19,8 @@ public class CircularIntegers {
         }
         this.mIds = new ArrayList<>();
         for (Integer id : ids) {
-            String colorHex = AppDatabase.getColorHex(context, id);
-            this.mIds.add(Color.parseColor(colorHex));
+            SolidColor solidColor = (SolidColor) AppDatabase.getSolidColor(context, id);
+            this.mIds.add(solidColor.getColor());
         }
     }
 
