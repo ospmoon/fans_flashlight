@@ -184,15 +184,12 @@ public class AppDatabase extends SQLiteOpenHelper {
                     index = cursor.getColumnIndex("value");
                     if (!cursor.isNull(index)) {
                         String value = cursor.getString(index);
-                        //if (value != null) {
-                            result.add(new SolidColor(collectionId, id, title, value));
-                            continue;
-                        //}
+                        result.add(new SolidColor(collectionId, id, title, value));
+                        continue;
                     }
 
                     index = cursor.getColumnIndex("path");
                     if (!cursor.isNull(index)) {
-                        //if (!cursor.isNull(index))
                         String path = cursor.getString(index);
                         index = cursor.getColumnIndex("file_name");
                         if (index >= 0) {
@@ -234,6 +231,22 @@ public class AppDatabase extends SQLiteOpenHelper {
         }
         cursor.close();
         Log.i(TAG, "getIds(), result: " + result);
+        return result;
+    }
+
+    public static synchronized String getColorHex(final Context context, int id) {
+        Log.i(TAG, "getColorHex(), id: " + id);
+        String result = null;
+        String query = "SELECT  * FROM " + TypeTable.COLOR_TABLE.getStringValue() + " WHERE collection_id=1 AND id=" + id;
+        SQLiteDatabase db = getInstance(context).getWritableDatabase();
+        Cursor cursor = db.rawQuery(query, null);
+       cursor.moveToFirst();
+        int index = cursor.getColumnIndex("value");
+        if (!cursor.isNull(index)) {
+            result = cursor.getString(index);
+        }
+        cursor.close();
+        Log.i(TAG, "getColorHex(), result: " + result);
         return result;
     }
 

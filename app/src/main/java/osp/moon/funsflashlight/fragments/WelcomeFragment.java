@@ -54,7 +54,7 @@ public class WelcomeFragment extends Fragment {
                 if (colorView != null) {
                     colorView.setBackgroundColor(randomColor);
                 }
-                long delayMillis = 100 + random.nextInt(10);
+                long delayMillis = 1000 + random.nextInt(10);
                 handler.postDelayed(this, delayMillis);
             }
         };
