@@ -32,6 +32,13 @@ public class FanColorView extends View {
     private boolean isAnimationRunning = false;
     private int animationDelay = 1000;
     private Context mContext;
+    private OnFanColorClickListener _callback;
+    public interface OnFanColorClickListener {
+        void onFanColorClicked(FanColor fanColor);
+    }
+    public void setOnFanColorClickListener(OnFanColorClickListener callback) {
+        this._callback = callback;
+    }
 
     public FanColorView(Context context, FanColor fanColor) {
         super(context);
@@ -42,6 +49,7 @@ public class FanColorView extends View {
 
     private void init(final Context context) {
         this.mContext = context;
+        this._callback = (OnFanColorClickListener) context;
         this.mHandler = new Handler(Looper.getMainLooper());
 
         int widthInDp = 100;
@@ -50,6 +58,16 @@ public class FanColorView extends View {
         float density = getResources().getDisplayMetrics().density;
         this.desiredWidthInPx = (int) (widthInDp * density);
         this.desiredHeightInPx = (int) (heightInDp * density);
+        setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (_callback != null && mFanColor != null) {
+                    Log.d(TAG, "FanColorView clicked. FanColor: " + (mFanColor != null ? mFanColor.getClass().getSimpleName() : "null"));
+                    _callback.onFanColorClicked(mFanColor);
+                }
+            }
+        });
+        setClickable(true);
     }
 
     @Override
@@ -151,20 +169,6 @@ public class FanColorView extends View {
             List<Integer> ids = animatedColor.getIds();
             this.animationDelay = animatedColor.getDelay() > 0 ? animatedColor.getDelay() : 1000;
             Log.d(TAG, "ADD AnimatedColor: "  + mFanColor.toString());
-            switch (mFanColor.getId()) {
-                case 1:
-                    setBackgroundColor(Color.BLUE);
-                    break;
-                case 2:
-                    setBackgroundColor(Color.GREEN);
-                    break;
-                case 3:
-                    setBackgroundColor(Color.YELLOW);
-                    break;
-                default:
-                    //setBackgroundColor(Color.RED);
-            }
-
             if (ids != null && !ids.isEmpty()) {
                 mCircularIntegers = new CircularIntegers(mContext, ids);
                 Log.d(TAG, "Set AnimatedColor with " + ids.size() + " colors and delay " + this.animationDelay + "ms.");
@@ -220,7 +224,7 @@ public class FanColorView extends View {
                 Integer nextColor = mCircularIntegers.getNext();
                 setBackgroundColor(nextColor);
                 invalidate();
-                Log.d(TAG, "Анимированный цвет установлен: " + String.format("#%06X", (0xFFFFFF & nextColor)) + ", следующий через " + animationDelay + "ms");
+                //Log.d(TAG, "Анимированный цвет установлен: " + String.format("#%06X", (0xFFFFFF & nextColor)) + ", следующий через " + animationDelay + "ms");
                 mHandler.postDelayed(this, animationDelay);
             }
         };

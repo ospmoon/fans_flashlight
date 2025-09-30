@@ -18,7 +18,7 @@ import osp.moon.funsflashlight.customobjects.FanColor;
 import osp.moon.funsflashlight.customviews.FanColorView;
 import osp.moon.funsflashlight.database.AppDatabase;
 
-public class MainActivity extends BaseActivity {
+public class MainActivity extends BaseActivity implements FanColorView.OnFanColorClickListener {
 
     private final String TAG = MainActivity.class.getName();
     private FragmentContainerView mNavHostFragment;
@@ -106,5 +106,11 @@ public class MainActivity extends BaseActivity {
                 }
             }
         }
+    }
+
+    @Override
+    public void onFanColorClicked(FanColor fanColor) {
+        Log.d(TAG, "onFanColorClicked called with: " + (fanColor != null ? fanColor.getClass().getSimpleName() : "null"));
+        Log.d(TAG, "FanColor: " + (fanColor != null ? fanColor.toString() : "null"));
     }
 }
