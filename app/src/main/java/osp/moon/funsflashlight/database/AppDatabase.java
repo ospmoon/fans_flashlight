@@ -1,5 +1,8 @@
 package osp.moon.funsflashlight.database;
 
+import static osp.moon.funsflashlight.AppConstants.ANIMATED_COLOR;
+import static osp.moon.funsflashlight.AppConstants.SOLID_COLOR;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -11,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import osp.moon.funsflashlight.App;
+import osp.moon.funsflashlight.AppConstants;
 import osp.moon.funsflashlight.customobjects.AnimatedColor;
 import osp.moon.funsflashlight.customobjects.FanCollection;
 import osp.moon.funsflashlight.customobjects.FanColor;
@@ -237,7 +241,7 @@ public class AppDatabase extends SQLiteOpenHelper {
     public static synchronized FanColor getSolidColor(final Context context, int id) {
         Log.i(TAG, "getSolidColor(), id: " + id);
         FanColor result = null;
-        String query = "SELECT  * FROM " + TypeTable.COLOR_TABLE.getStringValue() + " WHERE collection_id=1 AND id=" + id;
+        String query = "SELECT  * FROM " + TypeTable.COLOR_TABLE.getStringValue() + " WHERE collection_id=" + SOLID_COLOR + " AND id=" + id;
         SQLiteDatabase db = getInstance(context).getWritableDatabase();
         Cursor cursor = db.rawQuery(query, null);
         cursor.moveToFirst();
@@ -247,7 +251,7 @@ public class AppDatabase extends SQLiteOpenHelper {
             index = cursor.getColumnIndex("value");
             if (!cursor.isNull(index)) {
                 String value = cursor.getString(index);
-                result = new SolidColor(1, id, title, value);
+                result = new SolidColor(SOLID_COLOR, id, title, value);
             }
         }
         cursor.close();
@@ -258,7 +262,7 @@ public class AppDatabase extends SQLiteOpenHelper {
     public static synchronized FanColor getAnimatedColor(final Context context, int animatedColorId) {
         Log.i(TAG, "getAnimatedColor(), id: " + animatedColorId);
         FanColor result = null;
-        String query = "SELECT  * FROM " + TypeTable.COLOR_TABLE.getStringValue() + " WHERE collection_id=2 AND id=" + animatedColorId;
+        String query = "SELECT  * FROM " + TypeTable.COLOR_TABLE.getStringValue() + " WHERE collection_id=" + ANIMATED_COLOR + " AND id=" + animatedColorId;
         SQLiteDatabase db = getInstance(context).getWritableDatabase();
         Cursor cursor = db.rawQuery(query, null);
         cursor.moveToFirst();
@@ -270,7 +274,7 @@ public class AppDatabase extends SQLiteOpenHelper {
                 int delay = cursor.getInt(index);
                 if (delay > 0) {
                     List<Integer> ids = getIds(context, animatedColorId);
-                    result = new AnimatedColor(2, animatedColorId, title, ids, delay);
+                    result = new AnimatedColor(ANIMATED_COLOR, animatedColorId, title, ids, delay);
 
                 }
             }
@@ -278,6 +282,19 @@ public class AppDatabase extends SQLiteOpenHelper {
         cursor.close();
         Log.i(TAG, "getAnimatedColor(), result: " + result);
         return result;
+    }
+
+    public static synchronized FanColor getFanColor(final Context context, int collectionId, int id) {
+        Log.i(TAG, "getFanColor(), id: " + id);
+        switch (collectionId) {
+            case SOLID_COLOR:
+                return getSolidColor(context, id);
+            case ANIMATED_COLOR:
+                return getAnimatedColor(context, id);
+            default:
+                return null;
+        }
+
     }
 
 }

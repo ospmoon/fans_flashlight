@@ -38,12 +38,5 @@ dependencies {
     //navigation for android:name="androidx.navigation.fragment.NavHostFragment"
     implementation(libs.navigation.fragment.ktx)
 
-    //Dagger
-    //implementation (libs.dagger)
-    //annotationProcessor (libs.dagger.compiler)
-
-    //Room database
-    //implementation (libs.room.runtime)
-    //annotationProcessor (libs.room.compiler)
-    //implementation(libs.room.rxjava2)
+    implementation(libs.preference)
 }

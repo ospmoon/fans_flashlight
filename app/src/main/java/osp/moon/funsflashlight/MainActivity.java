@@ -2,6 +2,10 @@ package osp.moon.funsflashlight;
 
 import static android.view.View.GONE;
 
+import static osp.moon.funsflashlight.AppConstants.ANIMATED_COLOR;
+import static osp.moon.funsflashlight.AppConstants.FAN_IMAGE;
+import static osp.moon.funsflashlight.AppConstants.SOLID_COLOR;
+
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -22,6 +26,7 @@ import osp.moon.funsflashlight.customobjects.FanCollection;
 import osp.moon.funsflashlight.customobjects.FanColor;
 import osp.moon.funsflashlight.customviews.FanColorView;
 import osp.moon.funsflashlight.database.AppDatabase;
+import osp.moon.funsflashlight.helpers.PrefHelper;
 
 public class MainActivity extends BaseActivity implements FanColorView.OnFanColorClickListener {
 
@@ -135,19 +140,19 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
         mScrollContainerRight.removeAllViews();
 
         for (FanCollection collection : collectionList) {
-            if (collection.getId() == 1) {
+            if (collection.getId() == SOLID_COLOR) {
                 Log.d(TAG, "collection.getId() == 1");
                 for (FanColor color : collection.getColorList()) {
                     FanColorView fanColorView = new FanColorView(this, color);
                     mScrollContainerRight.addView(fanColorView);
                 }
-            } else if (collection.getId() == 2) {
+            } else if (collection.getId() == ANIMATED_COLOR) {
                 Log.d(TAG, "collection.getId() == 2");
                 for (FanColor color : collection.getColorList()) {
                     FanColorView fanColorView = new FanColorView(this, color);
                     mScrollContainerBottom.addView(fanColorView);
                 }
-            } else if (collection.getId() == 3) {
+            } else if (collection.getId() == FAN_IMAGE) {
                 Log.d(TAG, "collection.getId() == 3");
                 for (FanColor color : collection.getColorList()) {
                     FanColorView fanColorView = new FanColorView(this, color);
@@ -166,9 +171,12 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
 
     @Override
     public void onFanColorClicked(FanColor fanColor) {
-        Log.d(TAG, "onFanColorClicked called with: " + (fanColor != null ? fanColor.getClass().getSimpleName() : "null"));
-        Log.d(TAG, "FanColor: " + (fanColor != null ? fanColor.toString() : "null"));
+        if (fanColor == null) return;
+        Log.d(TAG, "onFanColorClicked called with: " + fanColor.getClass().getSimpleName());
+        Log.d(TAG, "FanColor: " + fanColor);
         sendColorToFragment(fanColor);
         changePanelsVisibility();
+        PrefHelper.storeColorId(getApplicationContext(), fanColor.getId());
+        PrefHelper.storeCollectionId(getApplicationContext(), fanColor.getCollectionId());
     }
 }

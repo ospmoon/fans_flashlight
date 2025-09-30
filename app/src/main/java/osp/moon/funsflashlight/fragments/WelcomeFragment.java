@@ -21,7 +21,9 @@ import osp.moon.funsflashlight.R;
 import osp.moon.funsflashlight.customobjects.AnimatedColor;
 import osp.moon.funsflashlight.customobjects.FanColor;
 import osp.moon.funsflashlight.customobjects.SolidColor;
+import osp.moon.funsflashlight.database.AppDatabase;
 import osp.moon.funsflashlight.helpers.CircularIntegers;
+import osp.moon.funsflashlight.helpers.PrefHelper;
 
 public class WelcomeFragment extends Fragment {
 
@@ -29,7 +31,6 @@ public class WelcomeFragment extends Fragment {
     private View mColorView;
     private Handler mHandler;
     private Runnable mColorChangeRunnable;
-    private Random random = new Random();
     private FanColor mCurrentFanColor;
     private boolean isAttached = false;
     private boolean isFragmentVisible = false;
@@ -56,6 +57,15 @@ public class WelcomeFragment extends Fragment {
             if (mCurrentFanColor != null) {
                 Log.i(TAG, "Received fanColor: " + mCurrentFanColor.getClass().getSimpleName() + ", " + mCurrentFanColor);
             }
+        } else {
+            int lastCollectionId = PrefHelper.readLastSavedCollectionId(requireContext());
+            int lastColorId = PrefHelper.readLastSavedColorId(requireContext());
+            if (lastCollectionId != -1 && lastColorId != -1 ) {
+                mCurrentFanColor = AppDatabase.getFanColor(requireContext(), lastCollectionId, lastColorId);
+            } else {
+                mCurrentFanColor = AppDatabase.getAnimatedColor(requireContext(), 3);
+            }
+
         }
 
         if (mCurrentFanColor instanceof SolidColor) {
