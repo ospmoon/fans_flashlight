@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">The Fans Flashlight</string>
+
+    <string name="click_here">Click here</string>
 </resources>

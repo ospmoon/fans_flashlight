@@ -9,6 +9,10 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.navigation.Navigation;
 
@@ -34,6 +38,7 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_main);
         Log.i(TAG, "onCreate()");
 
@@ -60,6 +65,51 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
         mScrollContainerBottom = findViewById(R.id.scrollContainerBottom);
         mScrollContainerLeft = findViewById(R.id.scrollContainerLeft);
         mScrollContainerRight = findViewById(R.id.scrollContainerRight);
+
+        /*RelativeLayout mainView = findViewById(R.id.mainView);
+        ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, windowInsets) -> {
+            Insets systemBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(
+                    systemBarsInsets.left,
+                    systemBarsInsets.top,
+                    systemBarsInsets.right,
+                    systemBarsInsets.bottom
+            );
+            return windowInsets;
+        });*/
+
+        ViewCompat.setOnApplyWindowInsetsListener(mBottomView, (v, windowInsets) -> {
+            Insets systemBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    v.getPaddingTop(),
+                    v.getPaddingRight(),
+                    v.getPaddingBottom() + systemBarsInsets.bottom
+            );
+            return windowInsets;
+        });
+
+        ViewCompat.setOnApplyWindowInsetsListener(mLeftView, (v, windowInsets) -> {
+            Insets systemBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    systemBarsInsets.top,
+                    v.getPaddingRight(),
+                    0
+            );
+            return windowInsets;
+        });
+
+        ViewCompat.setOnApplyWindowInsetsListener(mRightView, (v, windowInsets) -> {
+            Insets systemBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    systemBarsInsets.top,
+                    v.getPaddingRight(),
+                    0
+            );
+            return windowInsets;
+        });
 
     }
 
@@ -89,21 +139,19 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
                 Log.d(TAG, "collection.getId() == 1");
                 for (FanColor color : collection.getColorList()) {
                     FanColorView fanColorView = new FanColorView(this, color);
-                    //mScrollContainerLeft.addView(fanColorView);
-                    mScrollContainerBottom.addView(fanColorView);
+                    mScrollContainerRight.addView(fanColorView);
                 }
             } else if (collection.getId() == 2) {
                 Log.d(TAG, "collection.getId() == 2");
                 for (FanColor color : collection.getColorList()) {
                     FanColorView fanColorView = new FanColorView(this, color);
-                    //mScrollContainerBottom.addView(fanColorView);
-                    mScrollContainerRight.addView(fanColorView);
+                    mScrollContainerBottom.addView(fanColorView);
                 }
             } else if (collection.getId() == 3) {
                 Log.d(TAG, "collection.getId() == 3");
                 for (FanColor color : collection.getColorList()) {
                     FanColorView fanColorView = new FanColorView(this, color);
-                    //mScrollContainerRight.addView(fanColorView);
+                    mScrollContainerLeft.addView(fanColorView);
                 }
             }
         }
@@ -121,5 +169,6 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
         Log.d(TAG, "onFanColorClicked called with: " + (fanColor != null ? fanColor.getClass().getSimpleName() : "null"));
         Log.d(TAG, "FanColor: " + (fanColor != null ? fanColor.toString() : "null"));
         sendColorToFragment(fanColor);
+        changePanelsVisibility();
     }
 }
