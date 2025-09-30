@@ -76,7 +76,7 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
                     systemBarsInsets.bottom
             );
             return windowInsets;
-        });*/
+        });
 
         ViewCompat.setOnApplyWindowInsetsListener(mBottomView, (v, windowInsets) -> {
             Insets systemBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -109,7 +109,7 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
                     0
             );
             return windowInsets;
-        });
+        });*/
 
     }
 

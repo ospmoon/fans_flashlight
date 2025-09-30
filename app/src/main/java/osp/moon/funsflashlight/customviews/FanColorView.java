@@ -5,6 +5,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.graphics.Canvas; // Импорт для Canvas
+import android.graphics.Color;  // Импорт для Color
+import android.graphics.Paint;  // Импорт для Paint
+import android.graphics.Rect;   // Импорт для Rect (для текста)
+import android.text.TextPaint; // Более подходящий Paint для текста
 
 import androidx.annotation.NonNull;
 
@@ -29,6 +34,13 @@ public class FanColorView extends View {
     private boolean isAnimationRunning = false;
     private int mAnimationDelay = 1000;
     private Context mContext;
+    private Paint borderPaint;
+    private TextPaint titlePaint;
+    private float borderWidth = 1f; // Ширина контура в пикселях (можно сделать в dp)
+    private float paddingBetweenBorderAndColor = 4f; // Отступ в пикселях (можно сделать в dp)
+    private String titleText = ""; // Текст для отображения
+    private Rect textBounds = new Rect(); // Для вычисления размеров текста
+
     private OnFanColorClickListener _callback;
     public interface OnFanColorClickListener {
         void onFanColorClicked(FanColor fanColor);
@@ -43,15 +55,33 @@ public class FanColorView extends View {
 
     private void init(final Context context) {
         this.mContext = context;
-        this._callback = (OnFanColorClickListener) context;
+        if (context instanceof OnFanColorClickListener) {
+            this._callback = (OnFanColorClickListener) context;
+        }
         this.mHandler = new Handler(Looper.getMainLooper());
 
-        int widthInDp = 100;
-        int heightInDp = 100;
+        int widthInDp = 80;
+        int heightInDp = 80;
 
         float density = getResources().getDisplayMetrics().density;
         this.desiredWidthInPx = (int) (widthInDp * density);
         this.desiredHeightInPx = (int) (heightInDp * density);
+
+        borderWidth = 1 * density; // Пример: 4dp ширина контура
+        paddingBetweenBorderAndColor = 4 * density; // Пример: 8dp отступ
+
+        borderPaint = new Paint();
+        borderPaint.setStyle(Paint.Style.STROKE); // Только контур
+        borderPaint.setColor(Color.BLACK);        // Цвет контура (можно настраивать)
+        borderPaint.setStrokeWidth(borderWidth);
+        borderPaint.setAntiAlias(true);
+
+        titlePaint = new TextPaint(); // Используем TextPaint для текста
+        titlePaint.setColor(Color.BLACK);         // Цвет текста (можно настраивать)
+        titlePaint.setTextSize(16 * density);     // Размер текста (пример: 16sp)
+        titlePaint.setTextAlign(Paint.Align.CENTER); // Выравнивание текста по центру
+        titlePaint.setAntiAlias(true);
+
         setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -129,11 +159,12 @@ public class FanColorView extends View {
         if (mFanColor == null) {
             return;
         }
+        setTitle(mFanColor.getTitle());
+        setBorderColor(Color.TRANSPARENT);
+
 
         if (mFanColor instanceof SolidColor) {
-            SolidColor solidColor = (SolidColor) mFanColor;
-            setBackgroundColor(solidColor.getColor());
-            Log.d(TAG, "Set SolidColor: " + String.format("#%06X", (0xFFFFFF & solidColor.getColor())));
+            invalidate();
         } else if (mFanColor instanceof AnimatedColor) {
             AnimatedColor animatedColor = (AnimatedColor) mFanColor;
             List<Integer> ids = animatedColor.getIds();
@@ -197,6 +228,134 @@ public class FanColorView extends View {
             mHandler.removeCallbacks(mColorChangeRunnable);
         }
         isAnimationRunning = false;
+    }
+
+    @Override
+    protected void onDraw(@NonNull Canvas canvas) {
+        super.onDraw(canvas);
+
+        // Получаем размеры View
+        int width = getWidth();
+        int height = getHeight();
+
+        if (width == 0 || height == 0) {
+            return; // Нечего рисовать, если размеров нет
+        }
+
+        // 1. Рисуем основную цветную область с отступом от контура
+        // Прямоугольник для цветной области
+        float colorAreaLeft = borderWidth / 2f + paddingBetweenBorderAndColor;
+        float colorAreaTop = borderWidth / 2f + paddingBetweenBorderAndColor;
+        float colorAreaRight = width - (borderWidth / 2f + paddingBetweenBorderAndColor);
+        float colorAreaBottom = height - (borderWidth / 2f + paddingBetweenBorderAndColor);
+
+        int currentColorToDraw = Color.TRANSPARENT; // Цвет по умолчанию
+
+        if (mFanColor instanceof SolidColor) {
+            currentColorToDraw = ((SolidColor) mFanColor).getColor();
+        } else if (mFanColor instanceof AnimatedColor && mCircularIntegers != null) {
+            // Для анимированного цвета, берем текущий цвет из CircularIntegers
+            // Это будет тот цвет, который установил Runnable анимации
+            // Однако, если анимация еще не стартанула или остановлена,
+            // getCurrent() может вернуть последний цвет или null.
+            Integer animatedCurrentColor = mCircularIntegers.getCurrent();
+            if (animatedCurrentColor != null) {
+                currentColorToDraw = animatedCurrentColor;
+            } else if (!((AnimatedColor) mFanColor).getIds().isEmpty()){
+                // Если текущий null, но есть ID, возьмем первый из списка ID как начальный
+                // (Это для случая до первого тика анимации)
+                try {
+                    currentColorToDraw = ((AnimatedColor) mFanColor).getIds().get(0);
+                } catch (IndexOutOfBoundsException e) {
+                    Log.e(TAG, "Ошибка получения первого цвета из AnimatedColor IDs", e);
+                }
+            }
+        } else if (mFanColor == null && isAnimationRunning) {
+            // Если анимация была, но mFanColor стал null, останавливаем
+            stopColorAnimation();
+        }
+
+
+        // Используем временный Paint для заливки цветом, если нет своего
+        Paint colorFillPaint = new Paint();
+        colorFillPaint.setStyle(Paint.Style.FILL);
+        colorFillPaint.setColor(currentColorToDraw);
+        colorFillPaint.setAntiAlias(true);
+
+        if (colorAreaLeft < colorAreaRight && colorAreaTop < colorAreaBottom) {
+            canvas.drawRect(colorAreaLeft, colorAreaTop, colorAreaRight, colorAreaBottom, colorFillPaint);
+        }
+
+
+        // 2. Рисуем контур вокруг всей View
+        // Прямоугольник для контура должен учитывать половину ширины кисти,
+        // чтобы вся линия была видна внутри View.
+        float borderRectLeft = borderWidth / 2f;
+        float borderRectTop = borderWidth / 2f;
+        float borderRectRight = width - borderWidth / 2f;
+        float borderRectBottom = height - borderWidth / 2f;
+
+        if (borderRectLeft < borderRectRight && borderRectTop < borderRectBottom) {
+            canvas.drawRect(borderRectLeft, borderRectTop, borderRectRight, borderRectBottom, borderPaint);
+        }
+
+        // 3. Рисуем текст (титл) в центре
+        if (titleText != null && !titleText.isEmpty()) {
+            // Вычисляем позицию для текста, чтобы он был по центру
+            // titlePaint.setTextAlign(Paint.Align.CENTER) уже установлено
+
+            // Получаем границы текста для точного центрирования по вертикали
+            titlePaint.getTextBounds(titleText, 0, titleText.length(), textBounds);
+            float textX = width / 2f;
+            // Центрируем по вертикали: (высота_view / 2) - ( (textBounds.bottom + textBounds.top) / 2 )
+            // textBounds.bottom это смещение нижней части текста от базовой линии
+            // textBounds.top это смещение верхней части текста от базовой линии (обычно отрицательное)
+            float textY = height / 2f - textBounds.exactCenterY();
+
+
+            canvas.drawText(titleText, textX, textY, titlePaint);
+        }
+    }
+
+
+
+    public void setTitle(String title) {
+        this.titleText = title == null ? "" : title;
+        invalidate();
+    }
+
+    public void setBorderColor(int color) {
+        if (borderPaint != null) {
+            borderPaint.setColor(color);
+            invalidate();
+        }
+    }
+
+    public void setTitleColor(int color) {
+        if (titlePaint != null) {
+            titlePaint.setColor(color);
+            invalidate();
+        }
+    }
+
+    @Override
+    public void setBackgroundColor(int color) {
+        // Мы больше не будем использовать стандартный setBackgroundColor,
+        // так как будем рисовать цветную область сами внутри onDraw.
+        // Вместо этого, сохраним цвет и перерисуем.
+        // Это изменение нужно, чтобы фон не перекрывал наш кастомный рисунок.
+        // Если вы все же хотите использовать setBackgroundColor для SolidColor,
+        // то в onDraw для AnimatedColor нужно будет рисовать поверх фона.
+        // Для простоты, будем всегда рисовать цветную область в onDraw.
+
+        // Удаляем или комментируем: super.setBackgroundColor(color);
+        // Вместо этого, если mFanColor - SolidColor, можно сохранить его цвет
+        // для использования в onDraw. Но ваш setFanColor уже это делает.
+        // Важно: если setBackgroundColor вызывается извне, это может
+        // сбить нашу кастомную отрисовку.
+        Log.d(TAG, "setBackgroundColor called with " + String.format("#%06X", (0xFFFFFF & color)) + ", но мы рисуем цвет в onDraw.");
+        // Просто вызываем invalidate, чтобы onDraw был вызван с новым цветом (если он берется из mFanColor)
+        // Но лучше, чтобы цвет для отрисовки всегда брался из mFanColor.
     }
 
 }
