@@ -70,6 +70,9 @@ public class WelcomeFragment extends Fragment implements FanColorView.OnFanColor
     private SeekBar mDelaySeekBar;
     private boolean isPanelsVisible = false;
     private boolean arePanelsReadyForAnimation = false;
+    private static final int ANIMATION_DELAY_MIN = 100;
+    private static final int ANIMATION_DELAY_MAX = 2000;
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -112,7 +115,7 @@ public class WelcomeFragment extends Fragment implements FanColorView.OnFanColor
             mDelaySeekBar.setVisibility(VISIBLE);
             mColorView.setVisibility(VISIBLE);
             mAnimationDelay = animatedColor.getDelay() > 0 ? animatedColor.getDelay() : 1000;
-            mDelaySeekBar.setProgress(mAnimationDelay);
+            mDelaySeekBar.setProgress(mAnimationDelay - ANIMATION_DELAY_MIN);
             List<Integer> ids = animatedColor.getIds();
             if (ids != null) {
                 mCircularIntegers = new CircularIntegers(requireContext(), ids);
@@ -256,11 +259,11 @@ public class WelcomeFragment extends Fragment implements FanColorView.OnFanColor
         relativeLayout.setOnClickListener(view -> changePanelsVisibility());
 
         mDelaySeekBar = root.findViewById(R.id.seekBar);
-        mDelaySeekBar.setMax(2000);
+        mDelaySeekBar.setMax(ANIMATION_DELAY_MAX - ANIMATION_DELAY_MIN);
         mDelaySeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mAnimationDelay = progress;
+                mAnimationDelay = progress + ANIMATION_DELAY_MIN;
             }
 
             @Override
