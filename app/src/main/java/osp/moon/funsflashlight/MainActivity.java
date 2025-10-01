@@ -20,6 +20,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentContainerView;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 
 import java.util.List;
@@ -148,7 +149,12 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
         Log.w(TAG, "sendColorToFragment()");
         Bundle bundle = new Bundle();
         bundle.putSerializable("fanColor", fanColor);
-        Navigation.findNavController(this, R.id.nav_host_fragment).navigate(R.id.welcomeFragment, bundle);
+
+        NavOptions navOptions = new NavOptions.Builder()
+                .setLaunchSingleTop(true)  // <-- Вот он, ключ к решению!
+                .build();
+
+        Navigation.findNavController(this, R.id.nav_host_fragment).navigate(R.id.welcomeFragment, bundle, navOptions);
     }
 
     @Override

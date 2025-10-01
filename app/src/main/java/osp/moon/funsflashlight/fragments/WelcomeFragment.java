@@ -91,7 +91,7 @@ public class WelcomeFragment extends Fragment {
             AnimatedColor animatedColor = (AnimatedColor) mCurrentFanColor;
             this.mAnimationDelay = animatedColor.getDelay() > 0 ? animatedColor.getDelay() : 1000;
             List<Integer> ids = animatedColor.getIds();
-            if (ids != null && !ids.isEmpty()) {
+            if (ids != null) {
                 mCircularIntegers = new CircularIntegers(requireContext(), ids);
                 Log.d(TAG, "Set AnimatedColor with " + ids.size() + " colors and delay " + this.mAnimationDelay + "ms.");
                 conditionallyStartAnimation();

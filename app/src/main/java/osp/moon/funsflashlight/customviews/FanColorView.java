@@ -50,6 +50,7 @@ public class FanColorView extends View {
     private Bitmap currentBitmapToDraw = null; // Для хранения загруженной картинки
     private Paint bitmapPaint;                 // Paint для отрисовки Bitmap (можно настроить фильтрацию и т.д.)
     private RectF drawingRect = new RectF();   // Прямоугольник для рисования Bitmap (для масштабирования)
+    private Paint colorFillPaint;
     private OnFanColorClickListener _callback;
     public interface OnFanColorClickListener {
         void onFanColorClicked(FanColor fanColor);
@@ -95,6 +96,10 @@ public class FanColorView extends View {
         bitmapPaint.setAntiAlias(true);
         bitmapPaint.setFilterBitmap(true); // Включаем фильтрацию для более гладкого масштабирования
         bitmapPaint.setDither(true);       // Включаем дизеринг для лучшего качества цвета
+
+        colorFillPaint = new Paint();
+        colorFillPaint.setStyle(Paint.Style.FILL);
+        colorFillPaint.setAntiAlias(true);
 
         setOnClickListener(new OnClickListener() {
             @Override
@@ -189,7 +194,7 @@ public class FanColorView extends View {
             List<Integer> ids = animatedColor.getIds();
             this.mAnimationDelay = animatedColor.getDelay() > 0 ? animatedColor.getDelay() : 1000;
             Log.d(TAG, "ADD AnimatedColor: "  + mFanColor.toString());
-            if (ids != null && !ids.isEmpty()) {
+            if (ids != null) {
                 mCircularIntegers = new CircularIntegers(mContext, ids);
                 Log.d(TAG, "Set AnimatedColor with " + ids.size() + " colors and delay " + this.mAnimationDelay + "ms.");
                 conditionallyStartAnimation();
@@ -267,62 +272,36 @@ public class FanColorView extends View {
         // --- Рисование основного контента ---
         if (mFanColor instanceof SolidColor) {
             int colorToDraw = ((SolidColor) mFanColor).getColor();
-            Paint colorFillPaint = new Paint(); // Можно вынести в поля, если создается часто
-            colorFillPaint.setStyle(Paint.Style.FILL);
             colorFillPaint.setColor(colorToDraw);
-            colorFillPaint.setAntiAlias(true);
             if (contentAreaLeft < contentAreaRight && contentAreaTop < contentAreaBottom) {
                 canvas.drawRect(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom, colorFillPaint);
             }
         } else if (mFanColor instanceof AnimatedColor && mCircularIntegers != null) {
-            Integer animatedCurrentColor = mCircularIntegers.getCurrent();            int colorToDraw = Color.TRANSPARENT; // Цвет по умолчанию для анимации
+            Integer animatedCurrentColor = mCircularIntegers.getCurrent();
+            int colorToDraw = Color.TRANSPARENT; // Цвет по умолчанию для анимации
 
             if (animatedCurrentColor != null) {
                 colorToDraw = animatedCurrentColor;
-            } else if (!((AnimatedColor) mFanColor).getIds().isEmpty()) {
-                try {
-                    colorToDraw = ((AnimatedColor) mFanColor).getIds().get(0);
-                } catch (IndexOutOfBoundsException e) {
-                    Log.e(TAG, "Ошибка получения первого цвета из AnimatedColor IDs", e);
-                }
+            } else {
+                colorToDraw = mCircularIntegers.getNext();
             }
-            Paint colorFillPaint = new Paint();
-            colorFillPaint.setStyle(Paint.Style.FILL);
+
             colorFillPaint.setColor(colorToDraw);
-            colorFillPaint.setAntiAlias(true);
             if (contentAreaLeft < contentAreaRight && contentAreaTop < contentAreaBottom) {
                 canvas.drawRect(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom, colorFillPaint);
             }
         } else if (mFanColor instanceof FanImage && currentBitmapToDraw != null) {
-            // Устанавливаем прямоугольник, в который будем рисовать Bitmap
-            // Это будет наша contentArea
             drawingRect.set(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom);
-
-            // Рисуем Bitmap. Он будет отмасштабирован, чтобы полностью поместиться в drawingRect,
-            // сохраняя соотношение сторон (если вы не используете srcRect и dstRect более сложно).
-            // canvas.drawBitmap(bitmap, srcRect, dstRect, paint) дает больше контроля над масштабированием.
-            // Для простого вписывания:
             if (!drawingRect.isEmpty()) {
-                // Очищаем область под картинкой, если нужно (например, если картинка с прозрачностью)
-                // Paint clearPaint = new Paint();
-                // clearPaint.setColor(Color.TRANSPARENT); // Или цвет фона, если он есть
-                // clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-                // canvas.drawRect(drawingRect, clearPaint);
-
                 canvas.drawBitmap(currentBitmapToDraw, null, drawingRect, bitmapPaint);
             }
         } else {
-            // Случай, если mFanColor == null или тип не обработан, или картинка не загрузилась
-            // Рисуем прозрачный фон или цвет по умолчанию
             if (mFanColor == null && isAnimationRunning) {
                 stopColorAnimation();
             }
-            Paint defaultFillPaint = new Paint();
-            defaultFillPaint.setStyle(Paint.Style.FILL);
-            defaultFillPaint.setColor(Color.TRANSPARENT); // Или другой цвет по умолчанию
-            defaultFillPaint.setAntiAlias(true);
+            colorFillPaint.setColor(Color.TRANSPARENT);
             if (contentAreaLeft < contentAreaRight && contentAreaTop < contentAreaBottom) {
-                canvas.drawRect(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom, defaultFillPaint);
+                canvas.drawRect(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom, colorFillPaint);
             }
         }
 

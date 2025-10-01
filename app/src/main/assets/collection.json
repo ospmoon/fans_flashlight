@@ -19,7 +19,7 @@
         {"id":1, "title": "Flash", "ids":[1,11], "delay":500},
         {"id":2, "title": "Ukraine", "ids":[3,7], "delay":1000},
         {"id":3, "title": "Rainbow", "ids":[2,3,4,5,6,7,9,10], "delay":500},
-        {"id":4, "title": "Disco", "ids":[], "delay":300}
+        {"id":4, "title": "Disco", "ids":[], "delay":100}
       ]
     },
     {"id":3, "title":"Flags", 

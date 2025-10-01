@@ -1,10 +1,12 @@
 package osp.moon.funsflashlight.helpers;
 
 import android.content.Context;
+import android.graphics.Color;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Random;
 
 import osp.moon.funsflashlight.customobjects.SolidColor;
 import osp.moon.funsflashlight.database.AppDatabase;
@@ -12,11 +14,9 @@ import osp.moon.funsflashlight.database.AppDatabase;
 public class CircularIntegers {
     private List<Integer> mIds;
     private int currentIndex = -1;
+    private Random random = new Random();
 
     public CircularIntegers(final Context context, List<Integer> ids) {
-        if (ids == null || ids.isEmpty()) {
-            throw new IllegalArgumentException("Список ID не может быть null или пустым.");
-        }
         this.mIds = new ArrayList<>();
         for (Integer id : ids) {
             SolidColor solidColor = (SolidColor) AppDatabase.getSolidColor(context, id);
@@ -26,8 +26,10 @@ public class CircularIntegers {
 
     public Integer getNext() {
         if (this.mIds.isEmpty()) {
-            // Теоретически, конструктор не должен этого допустить, но для надежности
-            throw new NoSuchElementException("Список ID пуст.");
+            int red = random.nextInt(256);
+            int green = random.nextInt(256);
+            int blue = random.nextInt(256);
+            return Color.rgb(red, green, blue);
         }
         currentIndex++;
         if (currentIndex >= this.mIds.size()) {
