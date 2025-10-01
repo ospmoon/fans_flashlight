@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import android.graphics.Path;
 import java.util.List;
 
 import osp.moon.funsflashlight.customobjects.AnimatedColor;
@@ -51,6 +52,8 @@ public class FanColorView extends View {
     private Paint bitmapPaint;                 // Paint для отрисовки Bitmap (можно настроить фильтрацию и т.д.)
     private RectF drawingRect = new RectF();   // Прямоугольник для рисования Bitmap (для масштабирования)
     private Paint colorFillPaint;
+    private Path clipPath; // <-- Путь для обрезки канваса
+    private float cornerRadius; // <-- Радиус закругления углов
     private OnFanColorClickListener _callback;
     public interface OnFanColorClickListener {
         void onFanColorClicked(FanColor fanColor);
@@ -76,6 +79,9 @@ public class FanColorView extends View {
         float density = getResources().getDisplayMetrics().density;
         this.desiredWidthInPx = (int) (widthInDp * density);
         this.desiredHeightInPx = (int) (heightInDp * density);
+
+        this.cornerRadius = 8 * density; // Пример: 8dp радиус закругления
+        this.clipPath = new Path();
 
         borderWidth = 1 * density; // Пример: 4dp ширина контура
         paddingBetweenBorderAndColor = 4 * density; // Пример: 8dp отступ
@@ -181,6 +187,7 @@ public class FanColorView extends View {
             return;
         }
         setTitle(mFanColor.getTitle());
+        //setBorderColor(Color.LTGRAY);
         setBorderColor(Color.TRANSPARENT);
 
 
@@ -254,68 +261,72 @@ public class FanColorView extends View {
         isAnimationRunning = false;
     }
 
+// FanColorView.java
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
-        super.onDraw(canvas);
+        // НЕ вызываем super.onDraw(canvas); так как мы полностью контролируем отрисовку.
 
         int width = getWidth();
         int height = getHeight();
         if (width == 0 || height == 0) return;
 
-        // Определяем область для рисования контента (цвета или картинки)
-        // Эта та же область, что и colorArea в вашем коде
-        float contentAreaLeft = borderWidth / 2f + paddingBetweenBorderAndColor;
-        float contentAreaTop = borderWidth / 2f + paddingBetweenBorderAndColor;
-        float contentAreaRight = width - (borderWidth / 2f + paddingBetweenBorderAndColor);
-        float contentAreaBottom = height - (borderWidth / 2f + paddingBetweenBorderAndColor);
+        float padding = 0f;
+        drawingRect.set(padding, padding, width-padding, height-padding);
+        // Создаем путь для обрезки в форме закругленного прямоугольника
+        clipPath.reset(); // Сбрасываем путь перед использованием
+        clipPath.addRoundRect(drawingRect, cornerRadius, cornerRadius, Path.Direction.CW);
+        // Применяем обрезку. Все, что будет нарисовано дальше, будет видимо только внутри этого пути.
+        canvas.clipPath(clipPath);
 
-        // --- Рисование основного контента ---
+
+        padding = 10f;
+        RectF contentRect = new RectF(padding, padding, width-padding, height-padding);
+
         if (mFanColor instanceof SolidColor) {
             int colorToDraw = ((SolidColor) mFanColor).getColor();
             colorFillPaint.setColor(colorToDraw);
-            if (contentAreaLeft < contentAreaRight && contentAreaTop < contentAreaBottom) {
-                canvas.drawRect(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom, colorFillPaint);
-            }
+            canvas.drawRoundRect(contentRect, cornerRadius, cornerRadius, colorFillPaint);
+
         } else if (mFanColor instanceof AnimatedColor && mCircularIntegers != null) {
             Integer animatedCurrentColor = mCircularIntegers.getCurrent();
-            int colorToDraw = Color.TRANSPARENT; // Цвет по умолчанию для анимации
+            int colorToDraw = Color.TRANSPARENT;
 
             if (animatedCurrentColor != null) {
                 colorToDraw = animatedCurrentColor;
             } else {
+                // Запасной вариант, чтобы не было "дырки" до первого тика анимации
                 colorToDraw = mCircularIntegers.getNext();
             }
 
             colorFillPaint.setColor(colorToDraw);
-            if (contentAreaLeft < contentAreaRight && contentAreaTop < contentAreaBottom) {
-                canvas.drawRect(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom, colorFillPaint);
-            }
+            canvas.drawRoundRect(contentRect, cornerRadius, cornerRadius, colorFillPaint);
+
         } else if (mFanColor instanceof FanImage && currentBitmapToDraw != null) {
-            drawingRect.set(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom);
-            if (!drawingRect.isEmpty()) {
-                canvas.drawBitmap(currentBitmapToDraw, null, drawingRect, bitmapPaint);
-            }
+            // Рисуем Bitmap на всю область, он будет обрезан по краям
+            canvas.drawBitmap(currentBitmapToDraw, null, contentRect, bitmapPaint);
+
         } else {
+            // Запасной вариант, если нет контента
             if (mFanColor == null && isAnimationRunning) {
                 stopColorAnimation();
             }
             colorFillPaint.setColor(Color.TRANSPARENT);
-            if (contentAreaLeft < contentAreaRight && contentAreaTop < contentAreaBottom) {
-                canvas.drawRect(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom, colorFillPaint);
-            }
+            canvas.drawRect(contentRect, colorFillPaint);
         }
 
 
-        // --- Рисование контура ---
-        float borderRectLeft = borderWidth / 2f;
-        float borderRectTop = borderWidth / 2f;
-        float borderRectRight = width - borderWidth / 2f;
-        float borderRectBottom = height - borderWidth / 2f;
-        if (borderPaint != null && borderRectLeft < borderRectRight && borderRectTop < borderRectBottom) {
-            canvas.drawRect(borderRectLeft, borderRectTop, borderRectRight, borderRectBottom, borderPaint);
-        }
+        // --- 3. Рисование контура (обводки) ---
+        // Контур рисуется поверх контента. Чтобы он был виден внутри краев,
+        // мы рисуем его с отступом, равным половине его толщины.
+        float halfBorder = borderWidth / 2f;
+        RectF borderRect = new RectF(halfBorder, halfBorder, width - halfBorder, height - halfBorder);
+        // Рисуем закругленный прямоугольник, а не просто прямоугольник
+        canvas.drawRoundRect(borderRect, cornerRadius, cornerRadius, borderPaint);
 
-        // --- Рисование текста (титла) ---
+
+        // --- 4. Рисование текста ---
+        // Логика рисования текста остается прежней, он будет нарисован поверх всего.
         if (titlePaint != null && titleText != null && !titleText.isEmpty()) {
             titlePaint.getTextBounds(titleText, 0, titleText.length(), textBounds);
             float textX = width / 2f;
@@ -323,6 +334,7 @@ public class FanColorView extends View {
             canvas.drawText(titleText, textX, textY, titlePaint);
         }
     }
+
 
 
 
