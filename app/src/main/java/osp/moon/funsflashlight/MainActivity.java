@@ -1,6 +1,7 @@
 package osp.moon.funsflashlight;
 
 import static android.view.View.GONE;
+import static android.view.View.INVISIBLE;
 
 import static osp.moon.funsflashlight.AppConstants.ANIMATED_COLOR;
 import static osp.moon.funsflashlight.AppConstants.FAN_IMAGE;
@@ -9,6 +10,7 @@ import static osp.moon.funsflashlight.AppConstants.SOLID_COLOR;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
@@ -39,6 +41,7 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
     private RelativeLayout mLeftView;
     private RelativeLayout mRightView;
     private boolean isPanelsVisible = false;
+    private boolean arePanelsReadyForAnimation = false; // Новый флаг готовности
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,80 +58,59 @@ public class MainActivity extends BaseActivity implements FanColorView.OnFanColo
     private void init() {
         Log.i(TAG, "init()");
         mNavHostFragment = findViewById(R.id.nav_host_fragment);
-        mNavHostFragment.setOnClickListener(new View.OnClickListener() {
+        mNavHostFragment.setOnClickListener(view -> changePanelsVisibility());
+
+        mBottomView = findViewById(R.id.bottomView);
+        mLeftView = findViewById(R.id.leftView);
+        mRightView = findViewById(R.id.rightView);
+
+        mRightView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
-            public void onClick(View view) {
-                changePanelsVisibility();
+            public void onGlobalLayout() {
+                // Убираем слушатель, чтобы он не срабатывал повторно
+                mRightView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                // Теперь getWidth() и getHeight() вернут правильные значения.
+                // Устанавливаем начальное положение панелей за экраном.
+                mRightView.setTranslationX(mRightView.getWidth());
+                mLeftView.setTranslationX(-mLeftView.getWidth());
+                mBottomView.setTranslationY(mBottomView.getHeight());
+
+                arePanelsReadyForAnimation = true;
+                Log.d(TAG, "Панели готовы к анимации. Размеры (RightView): " + mRightView.getWidth());
             }
         });
-        mBottomView = findViewById(R.id.bottomView);
-        mBottomView.setVisibility(GONE);
-        mLeftView = findViewById(R.id.leftView);
-        mLeftView.setVisibility(GONE);
-        mRightView = findViewById(R.id.rightView);
-        mRightView.setVisibility(GONE);
+
+        mBottomView.setVisibility(INVISIBLE);
+        mLeftView.setVisibility(INVISIBLE);
+        mRightView.setVisibility(INVISIBLE);
+
         mScrollContainerBottom = findViewById(R.id.scrollContainerBottom);
         mScrollContainerLeft = findViewById(R.id.scrollContainerLeft);
         mScrollContainerRight = findViewById(R.id.scrollContainerRight);
-
-        /*RelativeLayout mainView = findViewById(R.id.mainView);
-        ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, windowInsets) -> {
-            Insets systemBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(
-                    systemBarsInsets.left,
-                    systemBarsInsets.top,
-                    systemBarsInsets.right,
-                    systemBarsInsets.bottom
-            );
-            return windowInsets;
-        });
-
-        ViewCompat.setOnApplyWindowInsetsListener(mBottomView, (v, windowInsets) -> {
-            Insets systemBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(
-                    v.getPaddingLeft(),
-                    v.getPaddingTop(),
-                    v.getPaddingRight(),
-                    v.getPaddingBottom() + systemBarsInsets.bottom
-            );
-            return windowInsets;
-        });
-
-        ViewCompat.setOnApplyWindowInsetsListener(mLeftView, (v, windowInsets) -> {
-            Insets systemBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(
-                    v.getPaddingLeft(),
-                    systemBarsInsets.top,
-                    v.getPaddingRight(),
-                    0
-            );
-            return windowInsets;
-        });
-
-        ViewCompat.setOnApplyWindowInsetsListener(mRightView, (v, windowInsets) -> {
-            Insets systemBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(
-                    v.getPaddingLeft(),
-                    systemBarsInsets.top,
-                    v.getPaddingRight(),
-                    0
-            );
-            return windowInsets;
-        });*/
-
     }
 
     private void changePanelsVisibility() {
-        Log.d(TAG, "changePanelsVisibility called. isPanelsVisible now: " + isPanelsVisible);
+        Log.d(TAG, "changePanelsVisibility called. isPanelsVisible was: " + isPanelsVisible);
+        long animationDuration = 300;
+        if (!arePanelsReadyForAnimation) {
+            Log.w(TAG, "Панели еще не готовы к анимации, клик проигнорирован.");
+            return;
+        }
+
         if (isPanelsVisible) {
-            mBottomView.setVisibility(GONE);
-            mLeftView.setVisibility(GONE);
-            mRightView.setVisibility(GONE);
+            mLeftView.animate().translationX(-mLeftView.getWidth()).setDuration(animationDuration).withEndAction(() -> mLeftView.setVisibility(INVISIBLE));
+            mRightView.animate().translationX(mRightView.getWidth()).setDuration(animationDuration).withEndAction(() -> mRightView.setVisibility(INVISIBLE));
+            mBottomView.animate().translationY(mBottomView.getHeight()).setDuration(animationDuration).withEndAction(() -> mBottomView.setVisibility(INVISIBLE));
             isPanelsVisible = false;
         } else {
-            mBottomView.setVisibility(View.VISIBLE);
+            Log.d(TAG, "Animating panels IN");
             mLeftView.setVisibility(View.VISIBLE);
             mRightView.setVisibility(View.VISIBLE);
+            mBottomView.setVisibility(View.VISIBLE);
+            mLeftView.animate().translationX(0).setDuration(animationDuration);
+            mRightView.animate().translationX(0).setDuration(animationDuration);
+            mBottomView.animate().translationY(0).setDuration(animationDuration);
             isPanelsVisible = true;
         }
     }
