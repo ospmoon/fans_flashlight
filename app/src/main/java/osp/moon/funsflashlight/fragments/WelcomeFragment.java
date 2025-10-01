@@ -24,6 +24,7 @@ import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -66,6 +67,7 @@ public class WelcomeFragment extends Fragment implements FanColorView.OnFanColor
     private RelativeLayout mBottomView;
     private RelativeLayout mLeftView;
     private RelativeLayout mRightView;
+    private SeekBar mDelaySeekBar;
     private boolean isPanelsVisible = false;
     private boolean arePanelsReadyForAnimation = false;
 
@@ -99,15 +101,18 @@ public class WelcomeFragment extends Fragment implements FanColorView.OnFanColor
         Log.d(TAG, "setCurrentFanColor()): " + fanColor.getClass().getSimpleName() + ", " + fanColor.toString());
         mCurrentFanColor = fanColor;
         if (mCurrentFanColor instanceof SolidColor) {
+            mDelaySeekBar.setVisibility(INVISIBLE);
             isAnimationRunning = false;
             mColorView.setBackgroundColor(((SolidColor) mCurrentFanColor).getColor());
             mColorView.setVisibility(VISIBLE);
             mColorView.invalidate();
             mImageView.setVisibility(GONE);
         } else if (mCurrentFanColor instanceof AnimatedColor) {
-            mColorView.setVisibility(VISIBLE);
             AnimatedColor animatedColor = (AnimatedColor) mCurrentFanColor;
-            this.mAnimationDelay = animatedColor.getDelay() > 0 ? animatedColor.getDelay() : 1000;
+            mDelaySeekBar.setVisibility(VISIBLE);
+            mColorView.setVisibility(VISIBLE);
+            mAnimationDelay = animatedColor.getDelay() > 0 ? animatedColor.getDelay() : 1000;
+            mDelaySeekBar.setProgress(mAnimationDelay);
             List<Integer> ids = animatedColor.getIds();
             if (ids != null) {
                 mCircularIntegers = new CircularIntegers(requireContext(), ids);
@@ -116,12 +121,14 @@ public class WelcomeFragment extends Fragment implements FanColorView.OnFanColor
             }
             mImageView.setVisibility(GONE);
         } else if (mCurrentFanColor instanceof FanImage) {
+            mDelaySeekBar.setVisibility(INVISIBLE);
             isAnimationRunning = false;
             mImageView.setVisibility(VISIBLE);
             FanImage fanImage = (FanImage) mCurrentFanColor;
             loadBitmapFromAssets(fanImage.getFileName());
             mColorView.setVisibility(GONE);
         }
+
     }
 
     @Override
@@ -247,6 +254,24 @@ public class WelcomeFragment extends Fragment implements FanColorView.OnFanColor
         Log.i(TAG, "init()");
         RelativeLayout relativeLayout = root.findViewById(R.id.root_view);
         relativeLayout.setOnClickListener(view -> changePanelsVisibility());
+
+        mDelaySeekBar = root.findViewById(R.id.seekBar);
+        mDelaySeekBar.setMax(2000);
+        mDelaySeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                mAnimationDelay = progress;
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        mDelaySeekBar.setVisibility(INVISIBLE);
 
         mBottomView = root.findViewById(R.id.bottomView);
         mLeftView = root.findViewById(R.id.leftView);
