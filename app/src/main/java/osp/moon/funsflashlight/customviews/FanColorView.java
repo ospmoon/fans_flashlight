@@ -1,6 +1,10 @@
 package osp.moon.funsflashlight.customviews;
 
 import android.content.Context;
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.RectF;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -13,10 +17,13 @@ import android.text.TextPaint; // Более подходящий Paint для �
 
 import androidx.annotation.NonNull;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 import osp.moon.funsflashlight.customobjects.AnimatedColor;
 import osp.moon.funsflashlight.customobjects.FanColor;
+import osp.moon.funsflashlight.customobjects.FanImage;
 import osp.moon.funsflashlight.customobjects.SolidColor;
 import osp.moon.funsflashlight.helpers.CircularIntegers;
 
@@ -40,7 +47,9 @@ public class FanColorView extends View {
     private float paddingBetweenBorderAndColor = 4f; // Отступ в пикселях (можно сделать в dp)
     private String titleText = ""; // Текст для отображения
     private Rect textBounds = new Rect(); // Для вычисления размеров текста
-
+    private Bitmap currentBitmapToDraw = null; // Для хранения загруженной картинки
+    private Paint bitmapPaint;                 // Paint для отрисовки Bitmap (можно настроить фильтрацию и т.д.)
+    private RectF drawingRect = new RectF();   // Прямоугольник для рисования Bitmap (для масштабирования)
     private OnFanColorClickListener _callback;
     public interface OnFanColorClickListener {
         void onFanColorClicked(FanColor fanColor);
@@ -81,6 +90,11 @@ public class FanColorView extends View {
         titlePaint.setTextSize(16 * density);     // Размер текста (пример: 16sp)
         titlePaint.setTextAlign(Paint.Align.CENTER); // Выравнивание текста по центру
         titlePaint.setAntiAlias(true);
+
+        bitmapPaint = new Paint();
+        bitmapPaint.setAntiAlias(true);
+        bitmapPaint.setFilterBitmap(true); // Включаем фильтрацию для более гладкого масштабирования
+        bitmapPaint.setDither(true);       // Включаем дизеринг для лучшего качества цвета
 
         setOnClickListener(new OnClickListener() {
             @Override
@@ -155,8 +169,10 @@ public class FanColorView extends View {
         Log.d(TAG, "setFanColor called with: " + (fanColor != null ? fanColor.getClass().getSimpleName() : "null"));
         this.mFanColor = fanColor;
         stopColorAnimation();
+        this.currentBitmapToDraw = null; // Сбрасываем предыдущий Bitmap
 
         if (mFanColor == null) {
+            invalidate(); // Перерисовать с прозрачным фоном или состоянием по умолчанию
             return;
         }
         setTitle(mFanColor.getTitle());
@@ -164,7 +180,10 @@ public class FanColorView extends View {
 
 
         if (mFanColor instanceof SolidColor) {
-            invalidate();
+            //invalidate();
+        } else if (mFanColor instanceof FanImage) {
+            FanImage fanImage = (FanImage) mFanColor;
+            loadBitmapFromAssets(fanImage.getFileName());
         } else if (mFanColor instanceof AnimatedColor) {
             AnimatedColor animatedColor = (AnimatedColor) mFanColor;
             List<Integer> ids = animatedColor.getIds();
@@ -234,85 +253,94 @@ public class FanColorView extends View {
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
-        // Получаем размеры View
         int width = getWidth();
         int height = getHeight();
+        if (width == 0 || height == 0) return;
 
-        if (width == 0 || height == 0) {
-            return; // Нечего рисовать, если размеров нет
-        }
+        // Определяем область для рисования контента (цвета или картинки)
+        // Эта та же область, что и colorArea в вашем коде
+        float contentAreaLeft = borderWidth / 2f + paddingBetweenBorderAndColor;
+        float contentAreaTop = borderWidth / 2f + paddingBetweenBorderAndColor;
+        float contentAreaRight = width - (borderWidth / 2f + paddingBetweenBorderAndColor);
+        float contentAreaBottom = height - (borderWidth / 2f + paddingBetweenBorderAndColor);
 
-        // 1. Рисуем основную цветную область с отступом от контура
-        // Прямоугольник для цветной области
-        float colorAreaLeft = borderWidth / 2f + paddingBetweenBorderAndColor;
-        float colorAreaTop = borderWidth / 2f + paddingBetweenBorderAndColor;
-        float colorAreaRight = width - (borderWidth / 2f + paddingBetweenBorderAndColor);
-        float colorAreaBottom = height - (borderWidth / 2f + paddingBetweenBorderAndColor);
-
-        int currentColorToDraw = Color.TRANSPARENT; // Цвет по умолчанию
-
+        // --- Рисование основного контента ---
         if (mFanColor instanceof SolidColor) {
-            currentColorToDraw = ((SolidColor) mFanColor).getColor();
+            int colorToDraw = ((SolidColor) mFanColor).getColor();
+            Paint colorFillPaint = new Paint(); // Можно вынести в поля, если создается часто
+            colorFillPaint.setStyle(Paint.Style.FILL);
+            colorFillPaint.setColor(colorToDraw);
+            colorFillPaint.setAntiAlias(true);
+            if (contentAreaLeft < contentAreaRight && contentAreaTop < contentAreaBottom) {
+                canvas.drawRect(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom, colorFillPaint);
+            }
         } else if (mFanColor instanceof AnimatedColor && mCircularIntegers != null) {
-            // Для анимированного цвета, берем текущий цвет из CircularIntegers
-            // Это будет тот цвет, который установил Runnable анимации
-            // Однако, если анимация еще не стартанула или остановлена,
-            // getCurrent() может вернуть последний цвет или null.
-            Integer animatedCurrentColor = mCircularIntegers.getCurrent();
+            Integer animatedCurrentColor = mCircularIntegers.getCurrent();            int colorToDraw = Color.TRANSPARENT; // Цвет по умолчанию для анимации
+
             if (animatedCurrentColor != null) {
-                currentColorToDraw = animatedCurrentColor;
-            } else if (!((AnimatedColor) mFanColor).getIds().isEmpty()){
-                // Если текущий null, но есть ID, возьмем первый из списка ID как начальный
-                // (Это для случая до первого тика анимации)
+                colorToDraw = animatedCurrentColor;
+            } else if (!((AnimatedColor) mFanColor).getIds().isEmpty()) {
                 try {
-                    currentColorToDraw = ((AnimatedColor) mFanColor).getIds().get(0);
+                    colorToDraw = ((AnimatedColor) mFanColor).getIds().get(0);
                 } catch (IndexOutOfBoundsException e) {
                     Log.e(TAG, "Ошибка получения первого цвета из AnimatedColor IDs", e);
                 }
             }
-        } else if (mFanColor == null && isAnimationRunning) {
-            // Если анимация была, но mFanColor стал null, останавливаем
-            stopColorAnimation();
+            Paint colorFillPaint = new Paint();
+            colorFillPaint.setStyle(Paint.Style.FILL);
+            colorFillPaint.setColor(colorToDraw);
+            colorFillPaint.setAntiAlias(true);
+            if (contentAreaLeft < contentAreaRight && contentAreaTop < contentAreaBottom) {
+                canvas.drawRect(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom, colorFillPaint);
+            }
+        } else if (mFanColor instanceof FanImage && currentBitmapToDraw != null) {
+            // Устанавливаем прямоугольник, в который будем рисовать Bitmap
+            // Это будет наша contentArea
+            drawingRect.set(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom);
+
+            // Рисуем Bitmap. Он будет отмасштабирован, чтобы полностью поместиться в drawingRect,
+            // сохраняя соотношение сторон (если вы не используете srcRect и dstRect более сложно).
+            // canvas.drawBitmap(bitmap, srcRect, dstRect, paint) дает больше контроля над масштабированием.
+            // Для простого вписывания:
+            if (!drawingRect.isEmpty()) {
+                // Очищаем область под картинкой, если нужно (например, если картинка с прозрачностью)
+                // Paint clearPaint = new Paint();
+                // clearPaint.setColor(Color.TRANSPARENT); // Или цвет фона, если он есть
+                // clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                // canvas.drawRect(drawingRect, clearPaint);
+
+                canvas.drawBitmap(currentBitmapToDraw, null, drawingRect, bitmapPaint);
+            }
+        } else {
+            // Случай, если mFanColor == null или тип не обработан, или картинка не загрузилась
+            // Рисуем прозрачный фон или цвет по умолчанию
+            if (mFanColor == null && isAnimationRunning) {
+                stopColorAnimation();
+            }
+            Paint defaultFillPaint = new Paint();
+            defaultFillPaint.setStyle(Paint.Style.FILL);
+            defaultFillPaint.setColor(Color.TRANSPARENT); // Или другой цвет по умолчанию
+            defaultFillPaint.setAntiAlias(true);
+            if (contentAreaLeft < contentAreaRight && contentAreaTop < contentAreaBottom) {
+                canvas.drawRect(contentAreaLeft, contentAreaTop, contentAreaRight, contentAreaBottom, defaultFillPaint);
+            }
         }
 
 
-        // Используем временный Paint для заливки цветом, если нет своего
-        Paint colorFillPaint = new Paint();
-        colorFillPaint.setStyle(Paint.Style.FILL);
-        colorFillPaint.setColor(currentColorToDraw);
-        colorFillPaint.setAntiAlias(true);
-
-        if (colorAreaLeft < colorAreaRight && colorAreaTop < colorAreaBottom) {
-            canvas.drawRect(colorAreaLeft, colorAreaTop, colorAreaRight, colorAreaBottom, colorFillPaint);
-        }
-
-
-        // 2. Рисуем контур вокруг всей View
-        // Прямоугольник для контура должен учитывать половину ширины кисти,
-        // чтобы вся линия была видна внутри View.
+        // --- Рисование контура ---
         float borderRectLeft = borderWidth / 2f;
         float borderRectTop = borderWidth / 2f;
         float borderRectRight = width - borderWidth / 2f;
         float borderRectBottom = height - borderWidth / 2f;
-
-        if (borderRectLeft < borderRectRight && borderRectTop < borderRectBottom) {
+        if (borderPaint != null && borderRectLeft < borderRectRight && borderRectTop < borderRectBottom) {
             canvas.drawRect(borderRectLeft, borderRectTop, borderRectRight, borderRectBottom, borderPaint);
         }
 
-        // 3. Рисуем текст (титл) в центре
-        if (titleText != null && !titleText.isEmpty()) {
-            // Вычисляем позицию для текста, чтобы он был по центру
-            // titlePaint.setTextAlign(Paint.Align.CENTER) уже установлено
-
-            // Получаем границы текста для точного центрирования по вертикали
+        // --- Рисование текста (титла) ---
+        if (titlePaint != null && titleText != null && !titleText.isEmpty()) {
             titlePaint.getTextBounds(titleText, 0, titleText.length(), textBounds);
             float textX = width / 2f;
-            // Центрируем по вертикали: (высота_view / 2) - ( (textBounds.bottom + textBounds.top) / 2 )
-            // textBounds.bottom это смещение нижней части текста от базовой линии
-            // textBounds.top это смещение верхней части текста от базовой линии (обычно отрицательное)
             float textY = height / 2f - textBounds.exactCenterY();
-
-
             canvas.drawText(titleText, textX, textY, titlePaint);
         }
     }
@@ -353,10 +381,45 @@ public class FanColorView extends View {
         // для использования в onDraw. Но ваш setFanColor уже это делает.
         // Важно: если setBackgroundColor вызывается извне, это может
         // сбить нашу кастомную отрисовку.
-        Log.d(TAG, "setBackgroundColor called with " + String.format("#%06X", (0xFFFFFF & color)) + ", но мы рисуем цвет в onDraw.");
+        //Log.d(TAG, "setBackgroundColor called with " + String.format("#%06X", (0xFFFFFF & color)) + ", но мы рисуем цвет в onDraw.");
         // Просто вызываем invalidate, чтобы onDraw был вызван с новым цветом (если он берется из mFanColor)
         // Но лучше, чтобы цвет для отрисовки всегда брался из mFanColor.
     }
+
+    private void loadBitmapFromAssets(String assetFileName) {
+        if (assetFileName == null || assetFileName.isEmpty()) {
+            Log.w(TAG, "Путь к изображению в assets пуст.");
+            this.currentBitmapToDraw = null;
+            invalidate();
+            return;
+        }
+
+        AssetManager assetManager = mContext.getAssets();
+        InputStream inputStream = null;
+        try {
+            inputStream = assetManager.open(assetFileName);
+            // Опции для BitmapFactory, если нужно контролировать размер или конфигурацию
+            // BitmapFactory.Options options = new BitmapFactory.Options();
+            // options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            this.currentBitmapToDraw = BitmapFactory.decodeStream(inputStream);
+            Log.d(TAG, "Bitmap " + assetFileName + " успешно загружен из assets.");
+        } catch (IOException e) {
+            Log.e(TAG, "Ошибка загрузки Bitmap " + assetFileName + " из assets: " + e.getMessage());
+            this.currentBitmapToDraw = null; // Устанавливаем null в случае ошибки
+            // Здесь можно загрузить изображение-заглушку по умолчанию, если нужно
+            // this.currentBitmapToDraw = BitmapFactory.decodeResource(getResources(), R.drawable.placeholder_image);
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    // Игнорируем или логируем
+                }
+            }
+        }
+        invalidate(); // Запрашиваем перерисовку после попытки загрузки Bitmap
+    }
+
 
 }
 

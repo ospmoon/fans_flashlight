@@ -34,7 +34,7 @@ public class AppHelper {
     public static List<FanCollection> getAssetsColors(final Context context) {
         List<FanCollection> result = new ArrayList<>();
 
-        String jsonString = readAsset(context, "colors.json");
+        String jsonString = readAsset(context, "collection.json");
 
         try {
             JSONArray jsonArray = new JSONArray(jsonString);

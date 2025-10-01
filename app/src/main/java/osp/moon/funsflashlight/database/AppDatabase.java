@@ -1,6 +1,7 @@
 package osp.moon.funsflashlight.database;
 
 import static osp.moon.funsflashlight.AppConstants.ANIMATED_COLOR;
+import static osp.moon.funsflashlight.AppConstants.FAN_IMAGE;
 import static osp.moon.funsflashlight.AppConstants.SOLID_COLOR;
 
 import android.content.ContentValues;
@@ -238,10 +239,10 @@ public class AppDatabase extends SQLiteOpenHelper {
         return result;
     }
 
-    public static synchronized FanColor getSolidColor(final Context context, int id) {
-        Log.i(TAG, "getSolidColor(), id: " + id);
+    public static synchronized FanColor getSolidColor(final Context context, int colorId) {
+        Log.i(TAG, "getSolidColor(), id: " + colorId);
         FanColor result = null;
-        String query = "SELECT  * FROM " + TypeTable.COLOR_TABLE.getStringValue() + " WHERE collection_id=" + SOLID_COLOR + " AND id=" + id;
+        String query = "SELECT  * FROM " + TypeTable.COLOR_TABLE.getStringValue() + " WHERE collection_id=" + SOLID_COLOR + " AND id=" + colorId;
         SQLiteDatabase db = getInstance(context).getWritableDatabase();
         Cursor cursor = db.rawQuery(query, null);
         cursor.moveToFirst();
@@ -251,7 +252,7 @@ public class AppDatabase extends SQLiteOpenHelper {
             index = cursor.getColumnIndex("value");
             if (!cursor.isNull(index)) {
                 String value = cursor.getString(index);
-                result = new SolidColor(SOLID_COLOR, id, title, value);
+                result = new SolidColor(SOLID_COLOR, colorId, title, value);
             }
         }
         cursor.close();
@@ -284,6 +285,31 @@ public class AppDatabase extends SQLiteOpenHelper {
         return result;
     }
 
+    public static synchronized FanColor getFanImage(final Context context, int imageId) {
+        Log.i(TAG, "getFanImage(), id: " + imageId);
+        FanColor result = null;
+        String query = "SELECT  * FROM " + TypeTable.COLOR_TABLE.getStringValue() + " WHERE collection_id=" + FAN_IMAGE + " AND id=" + imageId;
+        SQLiteDatabase db = getInstance(context).getWritableDatabase();
+        Cursor cursor = db.rawQuery(query, null);
+        cursor.moveToFirst();
+        int index = cursor.getColumnIndex("title");
+        if (!cursor.isNull(index)) {
+            String title = cursor.getString(index);
+            index = cursor.getColumnIndex("path");
+            if (!cursor.isNull(index)) {
+                String path = cursor.getString(index);
+                index = cursor.getColumnIndex("file_name");
+                if (!cursor.isNull(index)) {
+                    String fileName = cursor.getString(index);
+                    result = new FanImage(FAN_IMAGE, imageId, title, path, fileName);
+                }
+            }
+        }
+        cursor.close();
+        Log.i(TAG, "getAnimatedColor(), result: " + result);
+        return result;
+    }
+
     public static synchronized FanColor getFanColor(final Context context, int collectionId, int id) {
         Log.i(TAG, "getFanColor(), id: " + id);
         switch (collectionId) {
@@ -291,6 +317,8 @@ public class AppDatabase extends SQLiteOpenHelper {
                 return getSolidColor(context, id);
             case ANIMATED_COLOR:
                 return getAnimatedColor(context, id);
+            case FAN_IMAGE:
+                return getFanImage(context, id);
             default:
                 return null;
         }
