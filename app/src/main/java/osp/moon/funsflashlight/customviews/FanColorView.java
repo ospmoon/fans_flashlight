@@ -54,23 +54,21 @@ public class FanColorView extends View {
     private Paint colorFillPaint;
     private Path clipPath; // <-- Путь для обрезки канваса
     private float cornerRadius; // <-- Радиус закругления углов
-    private OnFanColorClickListener _callback;
+    private final OnFanColorClickListener _callback;
     public interface OnFanColorClickListener {
         void onFanColorClicked(FanColor fanColor);
     }
 
-    public FanColorView(Context context, FanColor fanColor) {
+    public FanColorView(Context context, FanColor fanColor, OnFanColorClickListener callback) {
         super(context);
         Log.d(TAG, "FanColorView CONSTRUCTOR: " + (fanColor != null ? fanColor.getClass().getSimpleName() : "null"));
+        this._callback = callback;
         init(context);
         setFanColor(fanColor);
     }
 
     private void init(final Context context) {
         this.mContext = context;
-        if (context instanceof OnFanColorClickListener) {
-            this._callback = (OnFanColorClickListener) context;
-        }
         this.mHandler = new Handler(Looper.getMainLooper());
 
         int widthInDp = 80;
