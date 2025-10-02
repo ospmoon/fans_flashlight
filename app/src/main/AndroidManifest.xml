@@ -3,9 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="osp.moon.funsflashlight">
 
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-
     <application
         android:name="osp.moon.funsflashlight.App"
         android:allowBackup="true"
@@ -25,12 +22,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".services.MyBackgroundService"
-            android:foregroundServiceType="dataSync"
-            android:exported="false">
-        </service>
 
 
     </application>
